@@ -1,0 +1,26 @@
+{
+    "id": "F76137B9",
+    "path": "~/Downloads/prueba2.R",
+    "project_path": null,
+    "type": "r_source",
+    "hash": "1938208902",
+    "contents": "",
+    "dirty": true,
+    "created": 1637651790127.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "230,15",
+        "scrollLine": "222"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1637660991,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1637684494462,
+    "read_only": false,
+    "read_only_alternatives": []
+}

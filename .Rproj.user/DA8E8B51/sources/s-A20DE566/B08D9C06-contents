@@ -1,0 +1,72 @@
+library(shiny)
+library(shinydashboard)
+
+shinyUI(dashboardPage(title = "Calificaciones ITSOEH", skin = "blue",
+                      dashboardHeader(title = "Calificaciones"),
+                      dashboardSidebar(
+                        sidebarMenu(  
+                          HTML(paste0(#imágen de Netflix y dirección a la página oficial
+                          "<br>",
+                          "<a href='https://www.netflix.com/' target='_blank'><img style = 'display: block; margin-left: auto; margin-right: auto;' src='https://sic.cultura.gob.mx/images/62464' width = '186'></a>",
+                          "<br>"
+                        )),
+                          menuItem("Datos"),
+                          fileInput("file","Sube los archivos correspondientes", multiple = TRUE),#
+                          checkboxInput(inputId = 'header', label = 'Header', value = TRUE),
+                          checkboxInput(inputId = "stringAsFactors", "stringAsFactors", FALSE),
+                          radioButtons(inputId = 'sep', label = 'Separator', choices = c(Comma=',',Semicolon=';',Tab='\t', Space=''), selected = ','),
+                           uiOutput("selectfile"),
+                          menuSubItem("Direcciones", tabName = "datos" ,icon = shiny::icon("database")),
+                          menuItem("Datos generales de primer Parcial"),
+                          menuSubItem("Datos generales", tabName = "visualizacion" ,icon = shiny::icon("database")),
+                        menuSubItem("Fuente final", tabName = "fuentefi" ,icon = shiny::icon("database")),
+                        menuItem("Datos por Carrera del Parcial"),
+                        menuSubItem("Sistemas Computacionales", tabName = "visualizacionCa" ,icon = shiny::icon("laptop")),
+                        menuSubItem("Gestión Empresarial", tabName = "visualizacionGe" ,icon = shiny::icon("users-cog")),
+                        menuSubItem("Industrias Alimentarias", tabName = "visualizacionAl" ,icon = shiny::icon("atom")),
+                        menuSubItem("Ing. Electromecánica", tabName = "visualizacionEl" ,icon = shiny::icon("bolt")),
+                        menuSubItem("Ing. Industrial", tabName = "visualizacionIn" ,icon = shiny::icon("industry")),
+                        menuSubItem("Ing. Logística", tabName = "visualizacionLo" ,icon = shiny::icon("map-marked-alt")),
+                        menuSubItem("Ing. en TIC'S", tabName = "visualizacionTi" ,icon = shiny::icon("satellite-dish"))
+                       
+                         ) 
+                      ),
+                      dashboardBody(
+                        tabItems(
+                          tabItem(tabName = "datos",
+                                  uiOutput("tb")           
+                          ),
+                          tabItem(tabName = "fuentefi",
+                                  uiOutput("fuentefid")  
+                          ),
+                          tabItem(tabName = "visualizacion",
+                                  uiOutput("primerPaso")  
+                          ),
+                          tabItem(tabName = "visualizacionCa",
+                                  uiOutput("repxCarrera")  
+                          ),
+                          
+                          tabItem(tabName = "visualizacionGe",
+                                  uiOutput("repxCarreraGe")  
+                          ),
+                          tabItem(tabName = "visualizacionAl",
+                                  uiOutput("repxCarreraAL")  
+                          ),
+                          tabItem(tabName = "visualizacionEl",
+                                  uiOutput("repxCarreraEl")  
+                          ),
+                          tabItem(tabName = "visualizacionIn",
+                                  uiOutput("repxCarreraIn")  
+                          ),
+                          tabItem(tabName = "visualizacionLo",
+                                  uiOutput("repxCarreraLog")  
+                          ),
+                          tabItem(tabName = "visualizacionTi",
+                                  uiOutput("repxCarreraTi")  
+                          )
+                        )
+                      )
+)
+
+
+)

@@ -1,0 +1,233 @@
+library(rwhatsapp)
+library(lubridate)
+library(tidyverse)
+library(tidytext)
+library(kableExtra)
+library(RColorBrewer)
+library(knitr)
+
+lecturaChat<- function(x) {
+  chat <- rwa_read(x)}
+lecturaChat(x="~/Downloads/chatAx.txt")
+miChat <-lecturaChat(x="~/Downloads/chatD.txt")# Lectura del chat
+  miChat <- miChat %>% # asignación de objetos
+  mutate(day = date(time)) %>% # Crear nuevas variables que se calculan con algunas existentes
+  mutate( # Rangos por meses del año 2020 y meses del año 2021 hasta el mes actual
+    mesAnio = case_when( # casos cuando
+#dias despues o igual a la fecha (día-mes-año) & días antes de la fecha dmy
+      day>= dmy(16092020) & day<=dmy(30092020)~"Septiembre 2020",
+      day>= dmy(01102020) & day<=dmy(31102020)~"Octubre 2020",
+      day>= dmy(01112020) & day<=dmy(30112020)~"Noviembre 2020",
+      day>= dmy(01122020) & day<=dmy(31122020)~"Diciembre 2020",
+      day>= dmy(01012021) & day<=dmy(31012021)~"Enero 2021",
+      day>= dmy(01022021) & day<=dmy(28022021)~"Febrero 2021",
+      day>= dmy(01032021) & day<=dmy(31032021)~"Marzo 2021",
+      day>= dmy(01042021) & day<=dmy(30042021)~"Abril 2021",
+    day>= dmy(01052021) & day<=dmy(31052021)~"Mayo 2021",
+    day>= dmy(01062021) & day<=dmy(30062021)~"Junio 2021",  
+    day>= dmy(01072021) & day<=dmy(31072021)~"Julio 2021",
+    day >= dmy(01082021) & day <= dmy(31082021 ) ~ "Agosto 2021",
+    day >= dmy(01092021) & day <= dmy(16092021 )  ~ "Septiempre 2021",
+    T ~ "Fuera de rango")# cualquier otro chat que esté afuera de los rangos del chat
+    ) %>% # concatenar múltiples dplyr operaciones
+  mutate( mesAnio = factor(mesAnio) ) %>% # clasificaciones de los datos en meses
+  filter(!is.na(author)) # filtro para omitir autores no identificados
+
+  # ************************  
+  # PALETA DE COLORES Colores para cada mes
+  paleta.mesAnioes <- brewer.pal(14,"Set1")[c(7,5,1,3,4,2,6,8,9,5,1,3,4,2)]
+
+  
+  # VERIFICANDO CUÁNTOS MENSAJES SE ENVIARON DURANTE EL PERIODO DE TIEMPO
+  miChat %>% #utlizar el chat para
+    group_by(mesAnio) %>% # agrupar el conjunto de meses
+    count(day) %>% #contar los días de cada mes
+    ggplot(aes(x = day, y = n, fill=mesAnio)) + # permite indicar que pondremos en los ejes y rellenar las barras de columnas de los meses
+    geom_bar(stat = "identity") + # altura de la barra sea proporcional al número de casos
+    scale_fill_manual(values=paleta.mesAnioes) +# asignar los colores que se asignaron en paleta.mesAnioes
+    ylab("Número de mensajes") + xlab("Fecha") + # etiquetas  de los ejes X y Y
+    ggtitle("Mensajes por día", "Frecuencia por meses del año") + #título y subtítulo del gráfico 
+    theme_minimal() + # estilo del gráfico para lectura de datos
+    theme( legend.title = element_blank(),  # tema para leyenda del titulo se asigna elementblank no dibuja nada y no asigna ningún espacio
+           legend.position = "bottom") # colocar la leyenda inferiormente
+ 
+  # ************************
+  # MENSAJES POR DÍA DE LA SEMANA
+  miChat %>% #usaremos el chat
+    mutate( wday.num = wday(day), #asignamos el numero de días a la semana
+            wday.name = weekdays(day)) %>%# nombre de días de la semana
+    group_by(mesAnio, wday.num, wday.name) %>%  #agrupar datos por meses del año, numeros de días y sus nombres
+    count() %>% #contar mensjaes por día de la semana de cada mes
+    ggplot(aes(x = reorder(wday.name, -wday.num), y = n, fill=mesAnio)) + #reordenar la grafica para empezar la semana en domingo, 
+    geom_bar(stat = "identity") + #  eje y frecuencia de mensajes y llenar la barra con cada mes y la altura de la barra sea proporcional al número de casos
+    scale_fill_manual(values=paleta.mesAnioes) + #llenar con colores asignados
+    ylab("") + xlab("") + # sin leyendas en los ejes
+    coord_flip() + # cambiar los ejes de X a Y  y de Y a X
+    ggtitle("Número de mensajes por día de la semana", "Frecuencia por mes del año") + #Título
+    theme_minimal() + # estilo del gráfico para lectura de datos
+    theme( legend.title = element_blank(), # tema para leyenda del titulo se asigna elementblank no dibuja nada y no asigna ningún espacio
+           legend.position = "bottom")  # colocar la leyenda inferiormente
+  
+  # ************************
+  # *****************
+  
+  # MANTENER EL ORDEN DE DÍAS DE LA SEMANA Y RENOMBRARLOS
+  diasemana <- c("domingo","lunes","martes","miércoles","jueves","viernes","sábado","domingo")
+  names(diasemana) <- 1:7 #asignar a names los nombres de la semana
+  # MENSAJES POR HORA DEL DÍA
+  miChat %>% #uso del chat
+    mutate( hour = hour(time), #hora
+            wday.num = wday(day),# número de días
+            wday.name = weekdays(day)) %>% #nombre de los días
+    count(mesAnio, wday.num, wday.name, hour) %>% #contar meses del año, días de la semana, horas del chat
+    ggplot(aes(x = hour, y = n, fill=mesAnio)) + #la grafica en el eje x se tiene el rango de hora, y conteo de chat, rellenar barra por meses del año
+    geom_bar(stat = "identity") +  # altura de la barra sea proporcional al número de casos
+    scale_fill_manual(values=paleta.mesAnioes) + #rellenar con colores asignados
+    ylab("Número de mensajes") + xlab("Horario") + #título con sus leyendas correspondientes
+    ggtitle("Número de mensajes por hora del día", "Frecuencia según mes del año") + #títulos de gráficos
+    facet_wrap(~wday.num, ncol=7, labeller = labeller(wday.num=diasemana))+ # agrupar los 7 graficos de los días de la semana en un sólo gráfico
+    theme_minimal() + # estilo de gráfico
+    theme( legend.title = element_blank(), # tema para leyenda del titulo se asigna elementblank no dibuja nada y no asigna ningún espacio
+           legend.position = "bottom",  # colocar la leyenda inferiormente
+           panel.spacing.x=unit(1, "lines")) # espacio entre cada grafico de los días
+  
+  # ************************
+  # CAMBIEMOS EL NOMBRE DE LOS USUARIOS POR CONFIDENCIALIDAD
+  
+  levels(miChat$author)[2] <- "P1 H"
+  levels(miChat$author)[1] <- "P2 M"
+  # MENSAJES POR USUARIO
+  miChat %>%
+    mutate(day = date(time)) %>% #días del chat
+    group_by(mesAnio) %>% #volvemos agrupar datos en cada mes del año
+    count(author) %>% #contar chats de cada autor
+    ggplot(aes(x = reorder(author, n), y = n, fill=mesAnio)) + # x el autor del chat y número de mensajes enviados por meses del año
+    geom_bar(stat = "identity") + # altura de la barra sea proporcional al número de casos
+    scale_fill_manual(values=paleta.mesAnioes) + # rellenar con los colores sellecionados
+    ylab("Número total de mensajes") + xlab("Usuario") + #título de cada eje
+    coord_flip() + # de x a Y y de Y a X
+    ggtitle("Número total de mensajes por usuario.", "¿Quién es más comunicativo? Frecuencia por estación del año") + #Título de gráficos
+    theme_minimal() + #Estilo del gráfico
+    theme( legend.title = element_blank(), #no hay título de leyendas
+           legend.position = "bottom") #poner leyendas en la parte inferior
+  
+  # ***********
+  # LIBRERÍA PARA FETCH DE IMAGEN PNG DE EMOJI DESDE https://abs.twimg.com
+  library(ggimage)
+  
+  # EMOJI RANKING
+  plotEmojis <- miChat %>% 
+    unnest(emoji, emoji_name) %>% 
+    mutate( emoji = str_sub(emoji, end = 1)) %>% 
+    mutate( emoji_name = str_remove(emoji_name, ":.*")) %>% 
+    count(emoji, emoji_name) %>% 
+    
+    # PLOT TOP 23 EMOJIS
+    top_n(23, n) %>% #se cuentan los 30 emojis mas usados
+    arrange(desc(n)) %>% #se organizan de manera descendente
+    # CREA UNA URL DE IMAGEN CON EL UNICODE DE EMOJI
+    mutate( emoji_url = map_chr(emoji, #la imagne se obtiene del url
+                                ~paste0("https://abs.twimg.com/emoji/v2/72x72/", as.hexmode(utf8ToInt(.x)),".png")) 
+    )
+  
+  # PLOT DEL RANKING DE EMOJIS MÁS USADOS
+  plotEmojis %>% 
+    ggplot(aes(x=reorder(emoji_name, n), y=n)) +
+    geom_col(aes(fill=n), show.legend = FALSE, width = .2) +
+    geom_point(aes(color=n), show.legend = FALSE, size = 3) +
+    geom_image(aes(image=emoji_url), size=.045) +
+    scale_fill_gradient(low="#2b83ba",high="#d7191c") +
+    scale_color_gradient(low="#2b83ba", high="#d7191c") +
+    ylab("Número de veces que el emoji fue usado") +
+    xlab("Emoji y significado") +
+    ggtitle("Emojis más utilizados de manera general", "Emojis más usados por todos") +
+    coord_flip() +
+    theme_minimal() +
+    theme()
+  
+  # *************
+  
+  # *******
+  # EMOJI RANK POR USUARIO
+  plotEmojis <- miChat %>% #asignar mi chat a  plotEmojis 
+    unnest(emoji, emoji_name) %>% #desagrupar emojis y sus nombres en columnas
+    mutate( emoji = str_sub(emoji, end = 1)) %>%  #asignar a emoji el substring que todos los argumentos tengan la misma longitud
+    count(author, emoji, emoji_name, sort = TRUE) %>% #contar autores, emojis, en orden ascendente
+    # PLOT DEL TOP 8 EMOJIS POR USUARIO
+    group_by(author) %>% #agrupar dato por autor
+    top_n(n = 8, n) %>% #mostar los 8 emojis mas usados
+    slice(1:8) %>% #indexar filas por sus ubicaciones
+    # CREA UNA URL DE IMAGEN CON EL UNICODE DE EMOJI
+    mutate( emoji_url = map_chr(emoji,  #asignar al emoji url la imagen desde la siguiente página
+                                ~paste0("https://abs.twimg.com/emoji/v2/72x72/",as.hexmode(utf8ToInt(.x)),".png")) )
+  # PLOT DE LA DATA
+  plotEmojis %>% 
+    ggplot(aes(x = reorder(emoji, -n), y = n)) + #en el grafico en el eje x se presentan el emoji de mayor a menor frecuencia
+    geom_col(aes(fill = author, group=author), show.legend = FALSE, width = .20) + # rellenar columnas por autor
+    # USAR PARA HACER FETCH DE UNA IMAGEN PNG DE EMOJI https://abs.twimg.com 
+    geom_image(aes(image=emoji_url), size=.13) +# usar imagen que se guardó en la variable emoji url
+    ylab("Número de veces que se usó el emoji") + #etiqueta de y
+    xlab("Emoji") + #etiqueta de x
+    facet_wrap(~author, ncol = 5, scales = "free") + #agrupar las graficas de cada autor en un sólo grafico
+    ggtitle("Emojis más usados en la conversación, por usuario") + #titulo de grafico
+    theme_minimal() + #tema de gráfico
+    theme(axis.text.x = element_blank()) #no hay título de leyendas en eje x
+  
+  # ***********
+ 
+# ******************
+  library(tidytext)
+  library(stopwords)
+  # REMOVEMOS PALABRAS SIN SIGNIFICADO RELEVANTE, COMO ARTÍCULOS, PRONOMBRES, ETC.
+  remover_palabras <- c(stopwords(language = "pt"),
+                        "multimedia", "y", "la", "el","en", "es", "si", "lo", "ya", "pero", "esa", "los",
+                        "yo","mi", "un", "con", "las", "omitido", "más","eso", "al", "una", "del", "qué", 
+                        "todo", "así", "le", "su", "va", "porque", "todos", "hay", "les", "pue", "ese", "son",
+                        "está", "pues", "ahí", "sí","ver", "estás", "algo", "vas", "ir","voy", "creo","fue","solo", "ni","sólo","nada", "aqui", "q", "tú")
+  # CONTEO DE PALABRAS
+  miChat %>%#usar miChat
+    unnest_tokens(input = text, output = word) %>%# desagrupar por tokens
+    filter(!word %in% remover_palabras) %>% #filtrar por palabras diferente a las palabras removidas
+    count(word) %>% #contar palabras
+    # PLOT DEL TOP 30 DE PALABRAS MÁS USADAS EN CONVERSACIÓN
+    top_n(30,n) %>% # frecuencia de las 30 palabras mas usadas
+    arrange(desc(n)) %>% #mostrar datos de manera descendente
+    ggplot(aes(x=reorder(word,n), y=n, fill=n, color=n)) + #en el eje x mostrar la palabra eje y frecuencia de la palabra
+    geom_col(show.legend = TRUE, width = .1) + #mostrar leyendas DE FRECUENCIAS
+    geom_point(show.legend = FALSE, size = 3) + #MOSTRAR un punto de tamaño al final de la barra
+    scale_fill_gradient(low="#2b83ba",high="#d7191c") + # llenar con degradado las barras
+                        scale_color_gradient(low="#2b83ba",high="#d7191c") + #aplica un degradado de color a las variables 
+                                             ggtitle("Palabras más usadas en la conversación de manera general") + #titulo de grafico
+                                               xlab("Palabras") + #etiqueta de eje x
+                                               ylab("Número de veces que se usó la palabra") +  #etiqueta de eje y
+                                               coord_flip() +  #inverir ejes
+                                               theme_minimal() #tema del grafico
+  # ***********
+  
+  # CONTEO DE PALABRAS POR USUARIO
+  miChat %>% #uso de chat
+    unnest_tokens(input = text, # Divida una columna en tokens, desagrupando la tabla en un token por fila.
+                  output = word) %>%
+    filter(!word %in% remover_palabras) %>%#filtrar las palabras que no estan en las palabras removidas
+    count(author, word, sort = TRUE) %>% #contar chats por autor, palabras, y ordenar de manera descendente
+    
+    # TOP 20 PALABRAS MÁS USADAS POR USUARIO
+    group_by(author) %>%#agrupar datos por autor
+    top_n(n = 20, n) %>%# el top 20 de sus palabras mas usadas
+    slice(1:20) %>%# indexar filas por sus ubicaciones
+    ungroup() %>% #desagrupar datos
+    arrange(author, desc(n)) %>% #se organizan por autor las palabras de manera descendente
+    mutate(order=row_number()) %>% # creará una columna de números consecutivos y se asigna a la variable order
+    ggplot(aes(x = reorder(word, n), y = n, fill = author, color = author)) + #el gráfico tendrá en el eje x las palabras contadas y Y su frecuencia, un color por autor
+    geom_col(show.legend = FALSE, width = .1) + # sin leyenda de frecuencia y ancho de la barra en .1
+    geom_point(show.legend = FALSE, size = 3) + #sin leyenda el punto y al final de la barra un punto de tamaño 3
+    xlab("Palabras") + #etiqueta de eje x
+    ylab("Número de veces que se usó la palabra") + #etiqueta de y
+    coord_flip() + #invertir ejes
+    facet_wrap(~author, ncol = 3, scales = "free") + # producción de un gráfico por diferentes autores
+    ggtitle("Palabras más usadas por usuario en la conversación") + #Título de gráfico
+    theme_minimal() #tema del grafico
+  
+  
+
+  
